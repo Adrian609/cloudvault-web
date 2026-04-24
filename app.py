@@ -1,5 +1,6 @@
 import os
 from werkzeug.utils import secure_filename
+from flask import send_file
 from cryptography.fernet import Fernet
 from flask import Flask, render_template, redirect, url_for, request, flash
 from flask_sqlalchemy import SQLAlchemy
@@ -38,6 +39,12 @@ class FileRecord(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     upload_time = db.Column(db.DateTime, default=db.func.current_timestamp())
     encrypted = db.Column(db.Boolean, default=True)
+
+class AccessRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    file_id = db.Column(db.Integer, db.ForeignKey('file_record.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    status = db.Column(db.String(20), default='Pending')
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -117,6 +124,27 @@ def logout():
     flash('Logged out successfully.')
     return redirect(url_for('login'))
 
+@app.route('/request-access', methods=['GET', 'POST'])
+@login_required
+def request_access():
+    files = FileRecord.query.all()
+
+    if request.method == 'POST':
+        file_id = request.form.get('file_id')
+
+        new_request = AccessRequest(
+            file_id=file_id,
+            user_id=current_user.id
+        )
+
+        db.session.add(new_request)
+        db.session.commit()
+
+        flash('Access request submitted.')
+        return redirect(url_for('dashboard'))
+
+    return render_template('request_access.html', files=files)
+
 @app.route('/upload', methods=['GET', 'POST'])
 @login_required
 def upload():
@@ -151,6 +179,30 @@ def upload():
 
     return render_template('upload.html')
 
+@app.route('/approve/<int:request_id>')
+@login_required
+def approve_request(request_id):
+    if current_user.role != 'admin':
+        return redirect(url_for('dashboard'))
+
+    req = AccessRequest.query.get(request_id)
+    req.status = 'Approved'
+    db.session.commit()
+
+    return redirect(url_for('admin'))
+
+
+@app.route('/deny/<int:request_id>')
+@login_required
+def deny_request(request_id):
+    if current_user.role != 'admin':
+        return redirect(url_for('dashboard'))
+
+    req = AccessRequest.query.get(request_id)
+    req.status = 'Denied'
+    db.session.commit()
+
+    return redirect(url_for('admin'))
 
 @app.route('/my-files')
 @login_required
@@ -166,8 +218,44 @@ def admin():
         return redirect(url_for('dashboard'))
 
     users = User.query.all()
-    return render_template('admin.html', users=users)
+    requests = AccessRequest.query.all()
 
+    return render_template('admin.html', users=users, requests=requests)
+
+@app.route('/my-requests')
+@login_required
+def my_requests():
+    requests = AccessRequest.query.filter_by(user_id=current_user.id).all()
+    return render_template('my_requests.html', requests=requests)
+
+
+@app.route('/download-request/<int:request_id>')
+@login_required
+def download_request(request_id):
+    access_request = AccessRequest.query.get_or_404(request_id)
+
+    if access_request.user_id != current_user.id:
+        flash('You are not allowed to access this request.')
+        return redirect(url_for('dashboard'))
+
+    if access_request.status != 'Approved':
+        flash('This request is not approved yet.')
+        return redirect(url_for('my_requests'))
+
+    file_record = FileRecord.query.get_or_404(access_request.file_id)
+    encrypted_path = os.path.join(UPLOAD_FOLDER, file_record.stored_filename)
+
+    with open(encrypted_path, 'rb') as f:
+        encrypted_data = f.read()
+
+    decrypted_data = cipher.decrypt(encrypted_data)
+
+    temp_path = os.path.join(UPLOAD_FOLDER, "decrypted_" + file_record.filename)
+
+    with open(temp_path, 'wb') as f:
+        f.write(decrypted_data)
+
+    return send_file(temp_path, as_attachment=True, download_name=file_record.filename)
 
 if __name__ == '__main__':
     with app.app_context():

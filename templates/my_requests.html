@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>My Access Requests</h2>
+
+{% if requests %}
+<table border="1" cellpadding="5">
+    <tr>
+        <th>ID</th>
+        <th>File ID</th>
+        <th>Status</th>
+        <th>Action</th>
+    </tr>
+
+    {% for req in requests %}
+    <tr>
+        <td>{{ req.id }}</td>
+        <td>{{ req.file_id }}</td>
+        <td>{{ req.status }}</td>
+        <td>
+            {% if req.status == 'Approved' %}
+                <a href="/download-request/{{ req.id }}">Download</a>
+            {% else %}
+                Not available
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>No access requests yet.</p>
+{% endif %}
+{% endblock %}

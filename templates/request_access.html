@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Request File Access</h2>
+
+<form method="POST">
+    <label>Select file:</label><br>
+    <select name="file_id">
+        {% for file in files %}
+        <option value="{{ file.id }}">{{ file.filename }}</option>
+        {% endfor %}
+    </select><br><br>
+
+    <button type="submit">Request Access</button>
+</form>
+{% endblock %}
