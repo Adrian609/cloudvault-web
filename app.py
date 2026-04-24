@@ -1,3 +1,6 @@
+import os
+from werkzeug.utils import secure_filename
+from cryptography.fernet import Fernet
 from flask import Flask, render_template, redirect, url_for, request, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -10,6 +13,11 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cloudvault.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+ENCRYPTION_KEY = Fernet.generate_key()
+cipher = Fernet(ENCRYPTION_KEY)
 
 login_manager = LoginManager()
 login_manager.login_view = 'login'
@@ -23,6 +31,13 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(20), default='user')
 
+class FileRecord(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(200), nullable=False)
+    stored_filename = db.Column(db.String(200), nullable=False)
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    upload_time = db.Column(db.DateTime, default=db.func.current_timestamp())
+    encrypted = db.Column(db.Boolean, default=True)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -102,6 +117,46 @@ def logout():
     flash('Logged out successfully.')
     return redirect(url_for('login'))
 
+@app.route('/upload', methods=['GET', 'POST'])
+@login_required
+def upload():
+    if request.method == 'POST':
+        uploaded_file = request.files.get('file')
+
+        if not uploaded_file or uploaded_file.filename == '':
+            flash('Please select a file.')
+            return redirect(url_for('upload'))
+
+        filename = secure_filename(uploaded_file.filename)
+        file_data = uploaded_file.read()
+        encrypted_data = cipher.encrypt(file_data)
+
+        stored_filename = f"{current_user.id}_{filename}.enc"
+        file_path = os.path.join(UPLOAD_FOLDER, stored_filename)
+
+        with open(file_path, 'wb') as f:
+            f.write(encrypted_data)
+
+        file_record = FileRecord(
+            filename=filename,
+            stored_filename=stored_filename,
+            owner_id=current_user.id
+        )
+
+        db.session.add(file_record)
+        db.session.commit()
+
+        flash('File uploaded and encrypted successfully.')
+        return redirect(url_for('my_files'))
+
+    return render_template('upload.html')
+
+
+@app.route('/my-files')
+@login_required
+def my_files():
+    files = FileRecord.query.filter_by(owner_id=current_user.id).all()
+    return render_template('my_files.html', files=files)
 
 @app.route('/admin')
 @login_required
