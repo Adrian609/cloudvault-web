@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CloudVault Web</title>
+</head>
+<body>
+    <h1>CloudVault Web</h1>
+
+    <nav>
+        <a href="/dashboard">Dashboard</a> |
+        <a href="/admin">Admin</a> |
+        <a href="/logout">Logout</a>
+    </nav>
+
+    <hr>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <p style="color:red;">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+</body>
+</html>

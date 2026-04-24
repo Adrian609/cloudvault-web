@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>User Dashboard</h2>
+
+<p>Welcome, {{ current_user.username }}!</p>
+<p>Your role: {{ current_user.role }}</p>
+
+<ul>
+    <li><a href="/upload">Upload File</a></li>
+    <li><a href="/my-files">My Files</a></li>
+    <li><a href="/request-access">Request Access</a></li>
+</ul>
+{% endblock %}
