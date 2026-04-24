@@ -7,9 +7,16 @@
     <h1>CloudVault Web</h1>
 
     <nav>
+    {% if current_user.is_authenticated %}
         <a href="/dashboard">Dashboard</a> |
-        <a href="/admin">Admin</a> |
+        {% if current_user.role == 'admin' %}
+            <a href="/admin">Admin</a> |
+        {% endif %}
         <a href="/logout">Logout</a>
+    {% else %}
+        <a href="/login">Login</a> |
+        <a href="/register">Register</a>
+    {% endif %}
     </nav>
 
     <hr>

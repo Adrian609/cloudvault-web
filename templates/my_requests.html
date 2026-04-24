@@ -14,15 +14,15 @@
 
     {% for req in requests %}
     <tr>
-        <td>{{ req.id }}</td>
-        <td>{{ req.file_id }}</td>
-        <td>{{ req.status }}</td>
-        <td>
-            {% if req.status == 'Approved' %}
-                <a href="/download-request/{{ req.id }}">Download</a>
-            {% else %}
+    	<td>{{ req.id }}</td>
+    	<td>{{ req.file_name }}</td>
+    	<td>{{ req.status }}</td>
+    	<td>
+           {% if req.status == 'Approved' %}
+               <a href="/download-request/{{ req.id }}">Download</a>
+           {% else %}
                 Not available
-            {% endif %}
+           {% endif %}
         </td>
     </tr>
     {% endfor %}

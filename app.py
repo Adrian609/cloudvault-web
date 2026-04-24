@@ -15,6 +15,12 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'docx'}
+MAX_FILE_SIZE = 2 * 1024 * 1024  # 2 MB
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 ENCRYPTION_KEY = Fernet.generate_key()
@@ -150,13 +156,25 @@ def request_access():
 def upload():
     if request.method == 'POST':
         uploaded_file = request.files.get('file')
-
         if not uploaded_file or uploaded_file.filename == '':
             flash('Please select a file.')
             return redirect(url_for('upload'))
 
         filename = secure_filename(uploaded_file.filename)
+        if not allowed_file(filename):
+            flash('File type not allowed.')
+            return redirect(url_for('upload'))
+
         file_data = uploaded_file.read()
+
+        if len(file_data) == 0:
+            flash('Empty files are not allowed.')
+        return redirect(url_for('upload'))
+
+        if len(file_data) > MAX_FILE_SIZE:
+            flash('File is too large. Max size is 2 MB.')
+        return redirect(url_for('upload'))
+
         encrypted_data = cipher.encrypt(file_data)
 
         stored_filename = f"{current_user.id}_{filename}.enc"
@@ -226,7 +244,18 @@ def admin():
 @login_required
 def my_requests():
     requests = AccessRequest.query.filter_by(user_id=current_user.id).all()
-    return render_template('my_requests.html', requests=requests)
+
+    request_data = []
+    for req in requests:
+        file = FileRecord.query.get(req.file_id)
+        request_data.append({
+        	'id': req.id,
+        	'file_name': file.filename if file else 'Unknown',
+        	'status': req.status
+    })
+
+    return render_template('my_requests.html', requests=request_data)
+
 
 
 @app.route('/download-request/<int:request_id>')
