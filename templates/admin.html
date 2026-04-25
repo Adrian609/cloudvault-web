@@ -49,8 +49,9 @@
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>User</th>
-                        <th>File</th>
+                        <th>Requester</th>
+                        <th>Requested File</th>
+                        <th>File Owner</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
@@ -59,15 +60,25 @@
                     {% for req in requests %}
                     <tr>
                         <td>{{ req.id }}</td>
-                        <td>{{ req.user_id }}</td>
-                        <td>{{ req.file_id }}</td>
+                        <td>
+                            <div class="fw-semibold">{{ req.requester_name }}</div>
+                            {% if req.requester_email %}
+                                <div class="small text-muted">{{ req.requester_email }}</div>
+                            {% endif %}
+                        </td>
+                        <td>{{ req.file_name }}</td>
+                        <td>{{ req.file_owner }}</td>
                         <td>
                             <span class="badge text-bg-{{ 'success' if req.status == 'Approved' else 'danger' if req.status == 'Denied' else 'warning' }}">{{ req.status }}</span>
                         </td>
                         <td>
                             <div class="d-flex flex-wrap gap-2">
-                                <a class="btn btn-sm btn-success" href="{{ url_for('approve_request', request_id=req.id) }}">Approve</a>
-                                <a class="btn btn-sm btn-outline-danger" href="{{ url_for('deny_request', request_id=req.id) }}">Deny</a>
+                                {% if req.status != 'Approved' %}
+                                    <a class="btn btn-sm btn-success" href="{{ url_for('approve_request', request_id=req.id) }}">Approve</a>
+                                {% endif %}
+                                {% if req.status != 'Denied' %}
+                                    <a class="btn btn-sm btn-outline-danger" href="{{ url_for('deny_request', request_id=req.id) }}">Deny</a>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>

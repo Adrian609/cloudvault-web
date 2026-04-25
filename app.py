@@ -388,7 +388,22 @@ def admin():
     users = User.query.all()
     requests = AccessRequest.query.all()
 
-    return render_template('admin.html', users=users, requests=requests)
+    request_data = []
+    for req in requests:
+        requester = User.query.get(req.user_id)
+        file_record = FileRecord.query.get(req.file_id)
+        owner = User.query.get(file_record.owner_id) if file_record else None
+
+        request_data.append({
+            'id': req.id,
+            'status': req.status,
+            'requester_name': requester.username if requester else 'Unknown user',
+            'requester_email': requester.email if requester else '',
+            'file_name': file_record.filename if file_record else 'Deleted file',
+            'file_owner': owner.username if owner else 'Unknown owner'
+        })
+
+    return render_template('admin.html', users=users, requests=request_data)
 
 
 # =========================
