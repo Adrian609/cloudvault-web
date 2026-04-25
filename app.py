@@ -185,6 +185,23 @@ def dashboard():
     return render_template('dashboard.html')
 
 
+@app.route('/account')
+@login_required
+def account():
+    uploaded_count = FileRecord.query.filter_by(owner_id=current_user.id).count()
+    request_count = AccessRequest.query.filter_by(user_id=current_user.id).count()
+    approved_count = AccessRequest.query.filter_by(user_id=current_user.id, status='Approved').count()
+    pending_count = AccessRequest.query.filter_by(user_id=current_user.id, status='Pending').count()
+
+    return render_template(
+        'account.html',
+        uploaded_count=uploaded_count,
+        request_count=request_count,
+        approved_count=approved_count,
+        pending_count=pending_count
+    )
+
+
 # =========================
 # ROUTES - FILE UPLOAD
 # =========================
