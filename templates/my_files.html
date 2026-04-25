@@ -35,7 +35,12 @@
                         </td>
                         <td>{{ file.upload_time }}</td>
                         <td>
-                            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('download_file', file_id=file.id) }}">Download</a>
+                            <div class="d-flex flex-wrap gap-2">
+                                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('download_file', file_id=file.id) }}">Download</a>
+                                <form method="POST" action="{{ url_for('delete_file', file_id=file.id) }}" onsubmit="return confirm({{ ('Delete ' ~ file.filename ~ '? This cannot be undone.') | tojson }});">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}

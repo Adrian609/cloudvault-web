@@ -297,6 +297,29 @@ def download_file(file_id):
     )
 
 
+@app.route('/delete-file/<int:file_id>', methods=['POST'])
+@login_required
+def delete_file(file_id):
+    file_record = FileRecord.query.get_or_404(file_id)
+
+    # Ensure users can only delete their own files.
+    if file_record.owner_id != current_user.id:
+        flash('You are not allowed to delete this file.', 'error')
+        return redirect(url_for('my_files'))
+
+    encrypted_path = os.path.join(UPLOAD_FOLDER, file_record.stored_filename)
+
+    if os.path.exists(encrypted_path):
+        os.remove(encrypted_path)
+
+    AccessRequest.query.filter_by(file_id=file_record.id).delete()
+    db.session.delete(file_record)
+    db.session.commit()
+
+    flash(f'"{file_record.filename}" was deleted successfully.', 'success')
+    return redirect(url_for('my_files'))
+
+
 # =========================
 # ROUTES - ACCESS REQUESTS
 # =========================
