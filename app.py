@@ -103,7 +103,7 @@ def load_user(user_id):
 
 @app.route('/')
 def home():
-    return redirect(url_for('login'))
+    return render_template('home.html')
 
 
 # User registration
@@ -191,30 +191,33 @@ def dashboard():
 @app.route('/upload', methods=['GET', 'POST'])
 @login_required
 def upload():
+    allowed_extensions = sorted(ALLOWED_EXTENSIONS)
+    max_file_size_mb = MAX_FILE_SIZE // (1024 * 1024)
+
     if request.method == 'POST':
         uploaded_file = request.files.get('file')
 
         # Validate file presence
         if not uploaded_file or uploaded_file.filename == '':
-            flash('Please select a file.')
+            flash('Please select a file before uploading.', 'error')
             return redirect(url_for('upload'))
 
         filename = secure_filename(uploaded_file.filename)
 
         # Validate file type
         if not allowed_file(filename):
-            flash('File type not allowed.')
+            flash(f'File type not allowed. Allowed types: {", ".join(allowed_extensions)}.', 'error')
             return redirect(url_for('upload'))
 
         file_data = uploaded_file.read()
 
         # Validate file size/content
         if len(file_data) == 0:
-            flash('Empty files are not allowed.')
+            flash('Empty files are not allowed. Please choose a file with content.', 'error')
             return redirect(url_for('upload'))
 
         if len(file_data) > MAX_FILE_SIZE:
-            flash('File is too large. Max size is 2 MB.')
+            flash(f'File is too large. Max size is {max_file_size_mb} MB.', 'error')
             return redirect(url_for('upload'))
 
         # Encrypt file before saving
@@ -238,10 +241,14 @@ def upload():
         db.session.add(file_record)
         db.session.commit()
 
-        flash('File uploaded and encrypted successfully.')
+        flash(f'"{filename}" uploaded and encrypted successfully.', 'success')
         return redirect(url_for('my_files'))
 
-    return render_template('upload.html')
+    return render_template(
+        'upload.html',
+        allowed_extensions=allowed_extensions,
+        max_file_size_mb=max_file_size_mb
+    )
 
 
 # =========================
