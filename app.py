@@ -103,7 +103,7 @@ def load_user(user_id):
 
 @app.route('/')
 def home():
-    return redirect(url_for('login'))
+    return render_template('home.html')
 
 
 # User registration
@@ -185,36 +185,56 @@ def dashboard():
     return render_template('dashboard.html')
 
 
+@app.route('/account')
+@login_required
+def account():
+    uploaded_count = FileRecord.query.filter_by(owner_id=current_user.id).count()
+    request_count = AccessRequest.query.filter_by(user_id=current_user.id).count()
+    approved_count = AccessRequest.query.filter_by(user_id=current_user.id, status='Approved').count()
+    pending_count = AccessRequest.query.filter_by(user_id=current_user.id, status='Pending').count()
+
+    return render_template(
+        'account.html',
+        uploaded_count=uploaded_count,
+        request_count=request_count,
+        approved_count=approved_count,
+        pending_count=pending_count
+    )
+
+
 # =========================
 # ROUTES - FILE UPLOAD
 # =========================
 @app.route('/upload', methods=['GET', 'POST'])
 @login_required
 def upload():
+    allowed_extensions = sorted(ALLOWED_EXTENSIONS)
+    max_file_size_mb = MAX_FILE_SIZE // (1024 * 1024)
+
     if request.method == 'POST':
         uploaded_file = request.files.get('file')
 
         # Validate file presence
         if not uploaded_file or uploaded_file.filename == '':
-            flash('Please select a file.')
+            flash('Please select a file before uploading.', 'error')
             return redirect(url_for('upload'))
 
         filename = secure_filename(uploaded_file.filename)
 
         # Validate file type
         if not allowed_file(filename):
-            flash('File type not allowed.')
+            flash(f'File type not allowed. Allowed types: {", ".join(allowed_extensions)}.', 'error')
             return redirect(url_for('upload'))
 
         file_data = uploaded_file.read()
 
         # Validate file size/content
         if len(file_data) == 0:
-            flash('Empty files are not allowed.')
+            flash('Empty files are not allowed. Please choose a file with content.', 'error')
             return redirect(url_for('upload'))
 
         if len(file_data) > MAX_FILE_SIZE:
-            flash('File is too large. Max size is 2 MB.')
+            flash(f'File is too large. Max size is {max_file_size_mb} MB.', 'error')
             return redirect(url_for('upload'))
 
         # Encrypt file before saving
@@ -238,10 +258,14 @@ def upload():
         db.session.add(file_record)
         db.session.commit()
 
-        flash('File uploaded and encrypted successfully.')
+        flash(f'"{filename}" uploaded and encrypted successfully.', 'success')
         return redirect(url_for('my_files'))
 
-    return render_template('upload.html')
+    return render_template(
+        'upload.html',
+        allowed_extensions=allowed_extensions,
+        max_file_size_mb=max_file_size_mb
+    )
 
 
 # =========================
@@ -288,6 +312,29 @@ def download_file(file_id):
         as_attachment=True,
         download_name=file_record.filename
     )
+
+
+@app.route('/delete-file/<int:file_id>', methods=['POST'])
+@login_required
+def delete_file(file_id):
+    file_record = FileRecord.query.get_or_404(file_id)
+
+    # Ensure users can only delete their own files.
+    if file_record.owner_id != current_user.id:
+        flash('You are not allowed to delete this file.', 'error')
+        return redirect(url_for('my_files'))
+
+    encrypted_path = os.path.join(UPLOAD_FOLDER, file_record.stored_filename)
+
+    if os.path.exists(encrypted_path):
+        os.remove(encrypted_path)
+
+    AccessRequest.query.filter_by(file_id=file_record.id).delete()
+    db.session.delete(file_record)
+    db.session.commit()
+
+    flash(f'"{file_record.filename}" was deleted successfully.', 'success')
+    return redirect(url_for('my_files'))
 
 
 # =========================
@@ -358,7 +405,22 @@ def admin():
     users = User.query.all()
     requests = AccessRequest.query.all()
 
-    return render_template('admin.html', users=users, requests=requests)
+    request_data = []
+    for req in requests:
+        requester = User.query.get(req.user_id)
+        file_record = FileRecord.query.get(req.file_id)
+        owner = User.query.get(file_record.owner_id) if file_record else None
+
+        request_data.append({
+            'id': req.id,
+            'status': req.status,
+            'requester_name': requester.username if requester else 'Unknown user',
+            'requester_email': requester.email if requester else '',
+            'file_name': file_record.filename if file_record else 'Deleted file',
+            'file_owner': owner.username if owner else 'Unknown owner'
+        })
+
+    return render_template('admin.html', users=users, requests=request_data)
 
 
 # =========================
