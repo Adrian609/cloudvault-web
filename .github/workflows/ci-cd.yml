@@ -5,10 +5,13 @@ on:
     branches:
       - main
       - master
+      - dev
+      - dev-adrian
   pull_request:
     branches:
       - main
       - master
+      - dev
   workflow_dispatch:
 
 permissions:
