@@ -32,10 +32,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -69,10 +69,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -155,10 +155,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -216,7 +216,7 @@ jobs:
 
       - name: Upload coverage and test artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: coverage-and-test-results
           path: |
@@ -246,10 +246,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -272,7 +272,7 @@ jobs:
         id: bandit_report
         if: always()
         continue-on-error: true
-        run: bandit -r . -x tests -f json -o bandit-report.json
+        run: bandit -r . -x tests -f json -o bandit-report.json --exit-zero
 
       - name: Enforce Bandit high-confidence high-severity gate
         id: bandit_enforce
@@ -290,7 +290,7 @@ jobs:
 
       - name: Upload security reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: security-scan-reports
           path: |
@@ -371,3 +371,4 @@ jobs:
         run: |
           echo "CI passed. Add deployment steps here once a hosting target is selected."
           echo "Examples: Render, Railway, Fly.io, Azure App Service, AWS Elastic Beanstalk, or Docker registry publish."
+
