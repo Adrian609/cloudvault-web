@@ -21,8 +21,10 @@ from cryptography.fernet import Fernet
 # =========================
 app = Flask(__name__)
 
-# Secret key used for session management (should be environment variable in production)
-app.config['SECRET_KEY'] = 'secret123'
+# Secret key used for session management.
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY") or Fernet.generate_key().decode(
+    "utf-8"
+)
 
 # SQLite database configuration
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///cloudvault.db"
