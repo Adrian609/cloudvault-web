@@ -1,5 +1,12 @@
 venv/
+.venv/
 __pycache__/
+tests/_tmp/
+.pytest_cache/
+.pytest_tmp/
+.ruff_cache/
+pytest-cache-files-*/
+.coverage
 *.pyc
 instance/
 uploads/

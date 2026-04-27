@@ -1,0 +1,191 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - dev
+      - dev-adrian
+  pull_request:
+    branches:
+      - main
+      - master
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.11"
+          - "3.12"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run tests
+        run: python -m pytest -q
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run coverage
+        run: python -m pytest --cov=. --cov-report=term-missing --cov-report=xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+
+  quality-security:
+    name: Quality and Security Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run Ruff
+        run: ruff check .
+
+      - name: Run Black
+        run: black --check .
+
+      - name: Run Bandit
+        run: bandit -r . -x tests
+
+      - name: Run pip-audit
+        run: pip-audit -r requirements.txt
+
+  smoke-check:
+    name: Build and Smoke Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Compile Python files
+        run: python -m compileall app.py tests
+
+      - name: Smoke check Flask app
+        run: |
+          python - <<'PY'
+          from app import app, db
+
+          app.config.update(
+              TESTING=True,
+              SQLALCHEMY_DATABASE_URI="sqlite:///:memory:",
+          )
+
+          required_endpoints = {
+              "home",
+              "register",
+              "login",
+              "logout",
+              "dashboard",
+              "account",
+              "upload",
+              "my_files",
+              "download_file",
+              "delete_file",
+              "request_access",
+              "approve_request",
+              "deny_request",
+              "admin",
+              "my_requests",
+              "download_request",
+          }
+
+          missing = required_endpoints - set(app.view_functions)
+          if missing:
+              raise SystemExit(f"Missing endpoints: {sorted(missing)}")
+
+          with app.app_context():
+              db.create_all()
+
+          response = app.test_client().get("/")
+          if response.status_code != 200:
+              raise SystemExit(f"Homepage smoke check failed: {response.status_code}")
+          PY
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs:
+      - test
+      - coverage
+      - quality-security
+      - smoke-check
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+
+    steps:
+      - name: Deployment target not configured
+        run: |
+          echo "CI passed. Add deployment steps here once a hosting target is selected."
+          echo "Examples: Render, Railway, Fly.io, Azure App Service, AWS Elastic Beanstalk, or Docker registry publish."
