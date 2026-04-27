@@ -13,7 +13,11 @@ def test_get_register_returns_200(client):
 def test_register_creates_user_with_hashed_password(app, client):
     response = client.post(
         "/register",
-        data={"username": "newuser", "email": "new@example.com", "password": "secret123"},
+        data={
+            "username": "newuser",
+            "email": "new@example.com",
+            "password": "secret123",
+        },
         follow_redirects=True,
     )
 
@@ -38,7 +42,11 @@ def test_register_rejects_missing_fields(client):
 def test_register_rejects_duplicate_username(app, client, normal_user):
     response = client.post(
         "/register",
-        data={"username": normal_user.username, "email": "unique@example.com", "password": "secret123"},
+        data={
+            "username": normal_user.username,
+            "email": "unique@example.com",
+            "password": "secret123",
+        },
         follow_redirects=True,
     )
 
@@ -49,7 +57,11 @@ def test_register_rejects_duplicate_username(app, client, normal_user):
 def test_register_rejects_duplicate_email(app, client, normal_user):
     response = client.post(
         "/register",
-        data={"username": "unique", "email": normal_user.email, "password": "secret123"},
+        data={
+            "username": "unique",
+            "email": normal_user.email,
+            "password": "secret123",
+        },
         follow_redirects=True,
     )
 
@@ -98,7 +110,15 @@ def test_logout_logs_out_authenticated_user(client, normal_user, login):
 
 
 def test_protected_routes_redirect_anonymous_users(client):
-    protected_routes = ["/dashboard", "/account", "/upload", "/my-files", "/my-requests", "/request-access", "/admin"]
+    protected_routes = [
+        "/dashboard",
+        "/account",
+        "/upload",
+        "/my-files",
+        "/my-requests",
+        "/request-access",
+        "/admin",
+    ]
 
     for route in protected_routes:
         response = client.get(route, follow_redirects=False)

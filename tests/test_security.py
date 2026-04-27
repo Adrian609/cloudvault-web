@@ -10,7 +10,9 @@ def test_passwords_are_never_stored_in_plaintext(app, normal_user):
         assert check_password_hash(user.password, "password123")
 
 
-def test_non_admin_users_cannot_modify_access_request_status(app, client, normal_user, access_request, login):
+def test_non_admin_users_cannot_modify_access_request_status(
+    app, client, normal_user, access_request, login
+):
     login(normal_user.username)
 
     client.get(f"/approve/{access_request['id']}", follow_redirects=True)
@@ -21,7 +23,9 @@ def test_non_admin_users_cannot_modify_access_request_status(app, client, normal
         assert request.status == "Pending"
 
 
-def test_direct_owner_download_requires_ownership(client, second_user, uploaded_file, login):
+def test_direct_owner_download_requires_ownership(
+    client, second_user, uploaded_file, login
+):
     login(second_user.username)
 
     response = client.get(f"/download/{uploaded_file['id']}", follow_redirects=True)

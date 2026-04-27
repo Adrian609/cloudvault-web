@@ -13,8 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-import app as app_module
-from app import AccessRequest, FileRecord, User, db
+import app as app_module  # noqa: E402
+from app import AccessRequest, FileRecord, User, db  # noqa: E402
 
 
 @pytest.fixture
@@ -106,7 +106,9 @@ def uploaded_file(app, client, normal_user, login):
 
     with app.app_context():
         file_record = FileRecord.query.filter_by(owner_id=normal_user.id).one()
-        encrypted_path = os.path.join(app_module.UPLOAD_FOLDER, file_record.stored_filename)
+        encrypted_path = os.path.join(
+            app_module.UPLOAD_FOLDER, file_record.stored_filename
+        )
         return {
             "id": file_record.id,
             "filename": file_record.filename,
@@ -127,4 +129,8 @@ def access_request(app, uploaded_file, second_user):
         )
         db.session.add(request)
         db.session.commit()
-        return {"id": request.id, "file_id": request.file_id, "user_id": request.user_id}
+        return {
+            "id": request.id,
+            "file_id": request.file_id,
+            "user_id": request.user_id,
+        }

@@ -20,7 +20,9 @@ def test_admin_users_can_access_admin(client, admin_user, login):
     assert b"Admin Panel" in response.data
 
 
-def test_normal_users_cannot_approve_access_requests(app, client, normal_user, access_request, login):
+def test_normal_users_cannot_approve_access_requests(
+    app, client, normal_user, access_request, login
+):
     login(normal_user.username)
 
     response = client.get(f"/approve/{access_request['id']}", follow_redirects=True)
@@ -31,7 +33,9 @@ def test_normal_users_cannot_approve_access_requests(app, client, normal_user, a
         assert request.status == "Pending"
 
 
-def test_normal_users_cannot_deny_access_requests(app, client, normal_user, access_request, login):
+def test_normal_users_cannot_deny_access_requests(
+    app, client, normal_user, access_request, login
+):
     login(normal_user.username)
 
     response = client.get(f"/deny/{access_request['id']}", follow_redirects=True)
@@ -42,7 +46,9 @@ def test_normal_users_cannot_deny_access_requests(app, client, normal_user, acce
         assert request.status == "Pending"
 
 
-def test_admin_users_can_approve_access_requests(app, client, admin_user, access_request, login):
+def test_admin_users_can_approve_access_requests(
+    app, client, admin_user, access_request, login
+):
     login(admin_user.username)
 
     response = client.get(f"/approve/{access_request['id']}", follow_redirects=True)
@@ -53,7 +59,9 @@ def test_admin_users_can_approve_access_requests(app, client, admin_user, access
         assert request.status == "Approved"
 
 
-def test_admin_users_can_deny_access_requests(app, client, admin_user, access_request, login):
+def test_admin_users_can_deny_access_requests(
+    app, client, admin_user, access_request, login
+):
     login(admin_user.username)
 
     response = client.get(f"/deny/{access_request['id']}", follow_redirects=True)
@@ -64,7 +72,9 @@ def test_admin_users_can_deny_access_requests(app, client, admin_user, access_re
         assert request.status == "Denied"
 
 
-def test_admin_request_display_shows_names_and_file_details(client, admin_user, access_request, uploaded_file, second_user, login):
+def test_admin_request_display_shows_names_and_file_details(
+    client, admin_user, access_request, uploaded_file, second_user, login
+):
     login(admin_user.username)
 
     response = client.get("/admin")

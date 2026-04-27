@@ -83,7 +83,9 @@ def test_upload_rejects_files_larger_than_max_size(client, normal_user, login):
     assert b"File is too large." in response.data
 
 
-def test_secure_filename_is_respected_for_dangerous_names(app, client, normal_user, login):
+def test_secure_filename_is_respected_for_dangerous_names(
+    app, client, normal_user, login
+):
     login(normal_user.username)
 
     response = client.post(
@@ -100,10 +102,14 @@ def test_secure_filename_is_respected_for_dangerous_names(app, client, normal_us
         assert ".." not in file_record.stored_filename
         assert "/" not in file_record.stored_filename
         assert "\\" not in file_record.stored_filename
-        assert os.path.exists(os.path.join(app_module.UPLOAD_FOLDER, file_record.stored_filename))
+        assert os.path.exists(
+            os.path.join(app_module.UPLOAD_FOLDER, file_record.stored_filename)
+        )
 
 
-def test_users_only_see_their_own_files(client, normal_user, second_user, uploaded_file, login):
+def test_users_only_see_their_own_files(
+    client, normal_user, second_user, uploaded_file, login
+):
     client.get("/logout", follow_redirects=True)
     login(second_user.username)
 
