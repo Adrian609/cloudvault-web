@@ -110,6 +110,70 @@ jobs:
       - name: Run pip-audit
         run: pip-audit -r requirements.txt
 
+  smoke-check:
+    name: Build and Smoke Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Compile Python files
+        run: python -m compileall app.py tests
+
+      - name: Smoke check Flask app
+        run: |
+          python - <<'PY'
+          from app import app, db
+
+          app.config.update(
+              TESTING=True,
+              SQLALCHEMY_DATABASE_URI="sqlite:///:memory:",
+          )
+
+          required_endpoints = {
+              "home",
+              "register",
+              "login",
+              "logout",
+              "dashboard",
+              "account",
+              "upload",
+              "my_files",
+              "download_file",
+              "delete_file",
+              "request_access",
+              "approve_request",
+              "deny_request",
+              "admin",
+              "my_requests",
+              "download_request",
+          }
+
+          missing = required_endpoints - set(app.view_functions)
+          if missing:
+              raise SystemExit(f"Missing endpoints: {sorted(missing)}")
+
+          with app.app_context():
+              db.create_all()
+
+          response = app.test_client().get("/")
+          if response.status_code != 200:
+              raise SystemExit(f"Homepage smoke check failed: {response.status_code}")
+          PY
+
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
@@ -117,6 +181,7 @@ jobs:
       - test
       - coverage
       - quality-security
+      - smoke-check
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
 
     steps:
