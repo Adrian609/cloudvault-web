@@ -21,3 +21,21 @@ pytest -q
 ```powershell
 pytest --cov=. --cov-report=term-missing
 ```
+
+## GitHub Actions CI/CD
+
+The repository includes `.github/workflows/ci-cd.yml`.
+
+It runs automatically on:
+
+- pushes to `main` or `master`
+- pull requests into `main` or `master`
+- manual runs from the GitHub Actions tab
+
+The workflow:
+
+- installs dependencies from `requirements.txt`
+- runs `python -m pytest -q` on Python 3.11 and 3.12
+- runs coverage with `python -m pytest --cov=. --cov-report=term-missing --cov-report=xml`
+- uploads `coverage.xml` as a workflow artifact
+- includes a deploy job placeholder that runs only after tests pass on `main` or `master`
