@@ -59,6 +59,33 @@ jobs:
       - name: Generate coverage and test reports
         run: python -m pytest --cov=. --cov-report=xml --junitxml=test-results.xml
 
+      - name: Generate Bandit JSON report
+        run: bandit -r . -x tests,.venv,venv,__pycache__,.git -f json -o bandit-report.json --exit-zero
+
+      - name: Verify Bandit JSON report
+        run: |
+          ls -lah bandit-report.json
+          python -m json.tool bandit-report.json > /dev/null
+
+      - name: Upload SonarQube Bandit report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: sonarqube-bandit-report
+          path: bandit-report.json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Write SonarQube Bandit import summary
+        run: |
+          {
+            echo "## SonarQube Bandit Import"
+            echo ""
+            echo "- Bandit report generated: yes"
+            echo "- Bandit report path: \`bandit-report.json\`"
+            echo "- Sonar imports Bandit via: \`sonar.python.bandit.reportPaths=bandit-report.json\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v7.2.0
         env:
