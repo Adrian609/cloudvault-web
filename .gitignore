@@ -14,6 +14,7 @@ pytest-cache-files-*/
 /test-results.xml
 /bandit-report.json
 /pip-audit-report.json
+/server.log
 *.pyc
 instance/
 uploads/
