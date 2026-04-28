@@ -6,7 +6,14 @@ tests/_tmp/
 .pytest_tmp/
 .ruff_cache/
 pytest-cache-files-*/
+.ci-bandit-src/
+.tmp-pip-audit/
 .coverage
+/coverage.xml
+/coverage.svg
+/test-results.xml
+/bandit-report.json
+/pip-audit-report.json
 *.pyc
 instance/
 uploads/

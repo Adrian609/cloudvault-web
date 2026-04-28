@@ -1,5 +1,10 @@
 # CloudVault Web
 
+[![CI/CD](https://github.com/codewithsach/cloudvault-web/actions/workflows/ci-cd.yml/badge.svg?branch=dev-adrian)](https://github.com/codewithsach/cloudvault-web/actions/workflows/ci-cd.yml)
+[![CodeQL](https://github.com/codewithsach/cloudvault-web/actions/workflows/codeql.yml/badge.svg?branch=dev-adrian)](https://github.com/codewithsach/cloudvault-web/actions/workflows/codeql.yml)
+![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)
+![Coverage](docs/images/coverage.svg)
+
 CloudVault Web is a Flask web application for encrypted multi-user file storage. Users can register, log in, upload encrypted files, request access to files, and download approved files. Admin users can review users and approve or deny access requests.
 
 ## Tech Stack
@@ -103,8 +108,8 @@ More details are in `TESTING.md`.
 ```powershell
 ruff check .
 black --check .
-bandit -r . -x tests
-pip-audit -r requirements.txt
+bandit -r . -x tests -f json -o bandit-report.json
+pip-audit -r requirements.txt -f json -o pip-audit-report.json
 ```
 
 If the tool scripts are not on PATH on Windows, run them through Python:
@@ -112,8 +117,8 @@ If the tool scripts are not on PATH on Windows, run them through Python:
 ```powershell
 python -m ruff check .
 python -m black --check .
-python -m bandit -r . -x tests
-python -m pip_audit -r requirements.txt
+python -m bandit -r . -x tests -f json -o bandit-report.json
+python -m pip_audit -r requirements.txt -f json -o pip-audit-report.json
 ```
 
 ## GitHub Actions
@@ -123,4 +128,31 @@ The repository includes:
 - `.github/workflows/ci-cd.yml` - tests, coverage, Ruff, Black, Bandit, pip-audit, and a deployment placeholder
 - `.github/workflows/codeql.yml` - CodeQL security analysis with extended security and quality queries
 
+The CI/CD workflow uploads these artifacts:
+
+- `coverage-and-test-results` - `coverage.xml`, `test-results.xml`, and `coverage.svg`
+- `security-scan-reports` - `bandit-report.json` and `pip-audit-report.json`
+
 No real deployment target is configured yet. The deploy job is a placeholder that runs only after CI passes on `main` or `master`.
+
+## CI/CD Pipeline
+
+```mermaid
+flowchart TD
+    A[Pull Request / Push] --> B[Checkout]
+    B --> C[Set up Python]
+    C --> D[Install dependencies]
+    D --> E[Build / smoke check]
+    E --> F[Run tests]
+    F --> G[Generate coverage]
+    G --> H[Lint / format checks]
+    H --> I[Bandit security scan]
+    I --> J[pip-audit dependency scan]
+    J --> K[CodeQL analysis]
+    K --> L[Upload artifacts]
+    L --> M[Merge gate]
+```
+
+## Portfolio Evidence
+
+Screenshot placeholders and capture instructions are in [`docs/ci-cd-screenshots.md`](docs/ci-cd-screenshots.md).
