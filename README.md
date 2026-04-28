@@ -155,4 +155,4 @@ flowchart TD
 
 ## Portfolio Evidence
 
-Screenshot placeholders and capture instructions are in [`docs/ci-cd-screenshots.md`](docs/ci-cd-screenshots.md).
+CI/CD workflow links, artifact names, and report interpretation guidance are in [`docs/ci-cd-evidence.md`](docs/ci-cd-evidence.md).
