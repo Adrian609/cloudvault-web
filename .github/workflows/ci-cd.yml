@@ -18,10 +18,20 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-cd-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  PYTHONUNBUFFERED: "1"
+
 jobs:
   test:
     name: Test Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     strategy:
       fail-fast: false
@@ -66,6 +76,7 @@ jobs:
   smoke_check:
     name: Build and Smoke Check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
@@ -148,6 +159,7 @@ jobs:
   coverage:
     name: Coverage and Test Artifacts
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs:
       - test
       - smoke_check
@@ -224,6 +236,7 @@ jobs:
             test-results.xml
             coverage.svg
           if-no-files-found: warn
+          retention-days: 14
 
       - name: Write coverage summary
         if: always()
@@ -243,6 +256,7 @@ jobs:
   quality_security:
     name: Quality and Security Checks
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Check out repository
@@ -282,7 +296,7 @@ jobs:
         id: pip_audit_report
         if: always()
         continue-on-error: true
-        run: pip-audit -r requirements.txt -f json -o pip-audit-report.json
+        run: pip-audit -r requirements.txt -f json -o pip-audit-report.json || true
 
       - name: Enforce pip-audit dependency gate
         id: pip_audit_enforce
@@ -297,6 +311,7 @@ jobs:
             bandit-report.json
             pip-audit-report.json
           if-no-files-found: warn
+          retention-days: 14
 
       - name: Write quality and security summary
         if: always()
@@ -321,6 +336,7 @@ jobs:
   telemetry_summary:
     name: CI/CD Telemetry Summary
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs:
       - test
       - smoke_check
@@ -358,6 +374,7 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs:
       - test
       - smoke_check
