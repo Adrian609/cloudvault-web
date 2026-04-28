@@ -286,11 +286,11 @@ jobs:
         id: bandit_report
         if: always()
         continue-on-error: true
-        run: bandit -r . -x tests -f json -o bandit-report.json --exit-zero
+        run: bandit -r . -x tests,.venv,venv,__pycache__,.git -f json -o bandit-report.json --exit-zero
 
       - name: Enforce Bandit high-confidence high-severity gate
         id: bandit_enforce
-        run: bandit -r . -x tests --severity-level high --confidence-level high
+        run: bandit -r . -x tests,.venv,venv,__pycache__,.git --severity-level high --confidence-level high
 
       - name: Generate pip-audit JSON report
         id: pip_audit_report
@@ -326,6 +326,8 @@ jobs:
             echo "- Black status: ${{ steps.black.outcome }}"
             echo "- Ruff status: ${{ steps.ruff.outcome }}"
             echo "- Bandit report generation: ${{ steps.bandit_report.outcome }}"
+            echo "- Bandit report path: \`bandit-report.json\`"
+            echo "- Sonar imports Bandit via: \`sonar.python.bandit.reportPaths=bandit-report.json\`"
             echo "- Bandit enforcement: ${{ steps.bandit_enforce.outcome }}"
             echo "- pip-audit report generation: ${{ steps.pip_audit_report.outcome }}"
             echo "- pip-audit enforcement: ${{ steps.pip_audit_enforce.outcome }}"
